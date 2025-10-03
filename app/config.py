@@ -4,8 +4,11 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str
-    DATABASE_ECHO: bool = False
+    POSTGRESQL_USER: str
+    POSTGRESQL_PASSWORD: str
+    POSTGRESQL_HOST: str = "localhost"
+    POSTGRESQL_PORT: str = "5432"
+    POSTGRESQL_DATABASE: str
 
     # Redis
     REDIS_URL: str
