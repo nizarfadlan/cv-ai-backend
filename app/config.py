@@ -1,8 +1,24 @@
-from pydantic_settings import BaseSettings
+from typing import Annotated, List, Union
+from pydantic import BeforeValidator, field_validator, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        env_file_encoding="utf-8",
+    )
+
+    # CORS
+    ORIGINAL_CORS_ALLOWED_ORIGINS: str = Field(
+        default="*", alias="CORS_ALLOWED_ORIGINS"
+    )
+
     # Database
     POSTGRESQL_USER: str
     POSTGRESQL_PASSWORD: str
@@ -35,9 +51,15 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    @property
+    def CORS_ALLOWED_ORIGINS(self) -> List[str]:
+        if self.ORIGINAL_CORS_ALLOWED_ORIGINS.strip() == "*":
+            return ["*"]
+        return [
+            origin.strip()
+            for origin in self.ORIGINAL_CORS_ALLOWED_ORIGINS.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache()
