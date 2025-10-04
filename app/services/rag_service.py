@@ -1,6 +1,7 @@
 from typing import List
 import chromadb
 from chromadb.config import Settings as ChromaSettings
+from app.config import settings
 from app.utils.pdf_parser import extract_text_from_pdf
 from app.core.exceptions import RAGServiceException
 
@@ -9,6 +10,9 @@ class RAGService:
     def __init__(self):
         self.client = chromadb.Client(
             ChromaSettings(
+                environment=settings.APP_ENV,
+                is_persistent=True,
+                persist_directory=settings.CHROMA_PERSIST_DIR,
                 anonymized_telemetry=False,
             )
         )
