@@ -1,4 +1,6 @@
-from typing import Dict
+import ast
+import re
+from typing import Dict, Optional
 import httpx
 import json
 from app.config import settings
@@ -11,6 +13,80 @@ class LLMService:
         self.api_key = settings.OPENROUTER_API_KEY
         self.model = settings.OPENROUTER_MODEL
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
+
+    def _extract_json_from_text(self, text: str) -> Optional[str]:
+        text = text.strip()
+
+        # Method 1: Find JSON code block
+        json_block_pattern = r"```json\s*(\{.*?\})\s*```"
+        match = re.search(json_block_pattern, text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        # Method 2: Find any code block
+        code_block_pattern = r"```\s*(\{.*?\})\s*```"
+        match = re.search(code_block_pattern, text, re.DOTALL)
+        if match:
+            return match.group(1)
+
+        # Method 3: Extract JSON object (handles nested objects)
+        json_pattern = r"\{(?:[^{}]|(?:\{[^{}]*\}))*\}"
+        matches = re.findall(json_pattern, text, re.DOTALL)
+        if matches:
+            return max(matches, key=len)
+
+        return None
+
+    def _parse_json_response(self, response: str) -> Dict:
+        # Clean response
+        response = response.strip()
+
+        # Try direct parsing first
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError:
+            try:
+                return ast.literal_eval(response)
+            except Exception:
+                pass
+
+        # Try extracting JSON from text
+        extracted_json = self._extract_json_from_text(response)
+        if extracted_json:
+            try:
+                return json.loads(extracted_json)
+            except json.JSONDecodeError:
+                # Try with ast.literal_eval
+                try:
+                    return ast.literal_eval(extracted_json)
+                except Exception:
+                    pass
+
+        # Last resort: manual extraction
+        if response.startswith("```json"):
+            response = response[7:]
+        if response.startswith("```"):
+            response = response[3:]
+        if response.endswith("```"):
+            response = response[:-3]
+        response = response.strip()
+
+        # Find first { and last }
+        first_brace = response.find("{")
+        last_brace = response.rfind("}")
+        if first_brace != -1 and last_brace != -1:
+            response = response[first_brace : last_brace + 1]
+            try:
+                return json.loads(response)
+            except json.JSONDecodeError:
+                try:
+                    return ast.literal_eval(response)
+                except Exception:
+                    pass
+
+        raise LLMServiceException(
+            f"Failed to extract valid JSON from response. First 500 chars: {response[:500]}"
+        )
 
     @retry_on_llm_error()
     async def generate_completion(
@@ -63,7 +139,9 @@ SCORING RUBRIC:
 CANDIDATE CV:
 {cv_text}
 
-Provide evaluation in JSON format only (no markdown, no extra text):
+CRITICAL INSTRUCTION: Your response must be ONLY a valid JSON object. Do not add any text before or after the JSON. Start your response with {{ and end with }}.
+
+Required JSON format:
 {{
     "technical_skills_score": <1-5>,
     "experience_level_score": <1-5>,
@@ -71,24 +149,28 @@ Provide evaluation in JSON format only (no markdown, no extra text):
     "cultural_fit_score": <1-5>,
     "cv_match_rate": <0.0-1.0>,
     "feedback": "<detailed feedback in 2-3 sentences>"
-}}"""
+}}
+
+Respond with JSON only:"""
 
         response = await self.generate_completion(prompt, temperature=0.2)
 
-        # Clean response
-        response = response.strip()
-        if response.startswith("```json"):
-            response = response[7:]
-        if response.startswith("```"):
-            response = response[3:]
-        if response.endswith("```"):
-            response = response[:-3]
-        response = response.strip()
-
         try:
-            return json.loads(response)
-        except json.JSONDecodeError as e:
-            raise LLMServiceException(f"Failed to parse LLM response as JSON: {str(e)}")
+            result = self._parse_json_response(response)
+            required_fields = [
+                "technical_skills_score",
+                "experience_level_score",
+                "achievements_score",
+                "cultural_fit_score",
+                "cv_match_rate",
+                "feedback",
+            ]
+            for field in required_fields:
+                if field not in result:
+                    raise LLMServiceException(f"Missing required field: {field}")
+            return result
+        except Exception as e:
+            raise LLMServiceException(f"Failed to parse CV evaluation: {str(e)}")
 
     async def evaluate_project(
         self,
@@ -108,7 +190,9 @@ SCORING RUBRIC:
 PROJECT REPORT:
 {project_text}
 
-Provide evaluation in JSON format only (no markdown, no extra text):
+CRITICAL INSTRUCTION: Your response must be ONLY a valid JSON object. Do not add any text before or after the JSON. Start your response with {{ and end with }}.
+
+Required JSON format:
 {{
     "correctness_score": <1-5>,
     "code_quality_score": <1-5>,
@@ -117,24 +201,30 @@ Provide evaluation in JSON format only (no markdown, no extra text):
     "creativity_score": <1-5>,
     "project_score": <1.0-5.0>,
     "feedback": "<detailed feedback in 2-3 sentences>"
-}}"""
+}}
+
+Respond with JSON only:"""
 
         response = await self.generate_completion(prompt, temperature=0.2)
 
-        # Clean response
-        response = response.strip()
-        if response.startswith("```json"):
-            response = response[7:]
-        if response.startswith("```"):
-            response = response[3:]
-        if response.endswith("```"):
-            response = response[:-3]
-        response = response.strip()
-
         try:
-            return json.loads(response)
-        except json.JSONDecodeError as e:
-            raise LLMServiceException(f"Failed to parse LLM response as JSON: {str(e)}")
+            result = self._parse_json_response(response)
+            required_fields = [
+                "correctness_score",
+                "code_quality_score",
+                "resilience_score",
+                "documentation_score",
+                "creativity_score",
+                "project_score",
+                "feedback",
+            ]
+            for field in required_fields:
+                if field not in result:
+                    raise LLMServiceException(f"Missing required field: {field}")
+            return result
+        except Exception as e:
+            print(f"[Project Evaluation] Failed to parse response: {response[:500]}")
+            raise LLMServiceException(f"Failed to parse project evaluation: {str(e)}")
 
     async def synthesize_summary(
         self,
