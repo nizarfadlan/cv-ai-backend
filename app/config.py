@@ -51,6 +51,15 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
+    # Rate Limiting
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_BACKEND: str = "memory"  # "memory" or "redis"
+    RATE_LIMIT_PER_MINUTE: int = 60
+    RATE_LIMIT_PER_HOUR: int = 1000
+    ORIGINAL_RATE_LIMIT_EXCLUDE_PATHS: str = Field(
+        default="/health,/docs,/openapi.json", alias="RATE_LIMIT_EXCLUDE_PATHS"
+    )
+
     @property
     def CORS_ALLOWED_ORIGINS(self) -> List[str]:
         if self.ORIGINAL_CORS_ALLOWED_ORIGINS.strip() == "*":
@@ -59,6 +68,16 @@ class Settings(BaseSettings):
             origin.strip()
             for origin in self.ORIGINAL_CORS_ALLOWED_ORIGINS.split(",")
             if origin.strip()
+        ]
+
+    @property
+    def RATE_LIMIT_EXCLUDED_PATHS(self) -> List[str]:
+        if not self.ORIGINAL_RATE_LIMIT_EXCLUDE_PATHS:
+            return []
+        return [
+            path.strip()
+            for path in self.ORIGINAL_RATE_LIMIT_EXCLUDE_PATHS.split(",")
+            if path.strip()
         ]
 
 
