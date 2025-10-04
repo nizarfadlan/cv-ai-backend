@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
@@ -27,7 +28,7 @@ class EvaluationService:
             raise ValueError(f"Evaluation {evaluation_id} not found")
 
         # Update status to processing
-        eval_repo.update_status(evaluation_id, EvaluationStatus.PROCESSING)
+        eval_repo.update_status(evaluation, EvaluationStatus.PROCESSING)
 
         try:
             # Get documents
@@ -64,18 +65,18 @@ class EvaluationService:
                 top_k=2,
             )
 
-            # Stage 1: Evaluate CV
-            cv_evaluation = await self.llm_service.evaluate_cv(
-                cv_text=cv_text,
-                job_description=job_desc_context,
-                scoring_rubric=cv_rubric_context,
-            )
-
-            # Stage 2: Evaluate Project
-            project_evaluation = await self.llm_service.evaluate_project(
-                project_text=project_text,
-                case_study_brief=case_study_context,
-                scoring_rubric=project_rubric_context,
+            # Stage 1: Evaluate CV and Project
+            cv_evaluation, project_evaluation = await asyncio.gather(
+                self.llm_service.evaluate_cv(
+                    cv_text=cv_text,
+                    job_description=job_desc_context,
+                    scoring_rubric=cv_rubric_context,
+                ),
+                self.llm_service.evaluate_project(
+                    project_text=project_text,
+                    case_study_brief=case_study_context,
+                    scoring_rubric=project_rubric_context,
+                ),
             )
 
             # Stage 3: Synthesize overall summary
@@ -108,13 +109,11 @@ class EvaluationService:
             }
 
             # Save results
-            eval_repo.save_results(evaluation_id, results)
+            eval_repo.save_results(evaluation, results)
 
             return results
 
         except Exception as e:
             # Update status to failed
-            evaluation.status = EvaluationStatus.FAILED.value
-            evaluation.error_message = str(e)
-            eval_repo.update_status(evaluation_id, EvaluationStatus.FAILED)
+            eval_repo.update_failed_status(evaluation, str(e))
             raise
