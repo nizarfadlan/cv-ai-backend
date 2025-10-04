@@ -26,6 +26,7 @@ class Document(Base):
     mime_type = Column(String, nullable=False)
     document_type = Column(String, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     def __repr__(self):
         return f"<Document(id={self.id}, type={self.document_type}, filename={self.filename})>"

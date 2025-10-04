@@ -6,3 +6,6 @@ metadata = MetaData()
 
 class Base(DeclarativeBase):
     metadata = metadata
+
+
+from app.models import *  # noqa

@@ -1,14 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import upload, evaluate, result
-from app.database.base import Base
-from app.database.session import engine
-
-# Create tables
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="CV Evaluator API",
+    title="CV AI API",
     description="AI-powered CV and Project Evaluation System",
     version="1.0.0",
 )
@@ -30,7 +25,7 @@ app.include_router(result.router)
 
 @app.get("/")
 async def root():
-    return {"message": "CV Evaluator API", "version": "1.0.0", "docs": "/docs"}
+    return {"message": "CV AI API", "version": "1.0.0", "docs": "/docs"}
 
 
 @app.get("/health")
