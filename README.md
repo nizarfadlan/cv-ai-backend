@@ -5,7 +5,7 @@ AI-powered CV and Project Evaluation System using FastAPI, PostgreSQL, and LLM.
 ## Features
 
 - 📄 Upload CV and Project Report (PDF)
-- 🤖 AI-powered evaluation using Grok 4
+- 🤖 AI-powered evaluation using Deepseek
 - 🔍 RAG (Retrieval-Augmented Generation) with ChromaDB
 - ⚡ Async processing with Celery + Redis
 - 📊 Structured scoring based on predefined rubrics
@@ -18,7 +18,7 @@ AI-powered CV and Project Evaluation System using FastAPI, PostgreSQL, and LLM.
 - **Database**: PostgreSQL + SQLAlchemy
 - **Package Manager**: UV
 - **Task Queue**: Celery + Redis
-- **LLM**: Grok 4
+- **LLM**: Deepseek via OpenRouter
 - **Vector DB**: ChromaDB
 - **PDF Parsing**: PyPDF2
 
