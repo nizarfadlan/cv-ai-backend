@@ -1,3 +1,4 @@
+import asyncio
 from celery import Celery
 from app.config import settings
 from app.database.session import SessionLocal
@@ -28,10 +29,12 @@ def process_evaluation_task(self, evaluation_id: str):
         eval_repo = EvaluationRepository(db)
 
         evaluation_service = EvaluationService()
-        results = evaluation_service.process_evaluation(
-            evaluation_id=evaluation_id,
-            doc_repo=doc_repo,
-            eval_repo=eval_repo,
+        results = asyncio.run(
+            evaluation_service.process_evaluation(
+                evaluation_id=evaluation_id,
+                doc_repo=doc_repo,
+                eval_repo=eval_repo,
+            )
         )
 
         return {
