@@ -43,3 +43,7 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Chroma
+chroma_db/
+!chroma_db/.gitkeep

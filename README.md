@@ -1,11 +1,11 @@
-# CV Evaluator Backend
+# CV AI Backend
 
 AI-powered CV and Project Evaluation System using FastAPI, PostgreSQL, and LLM.
 
 ## Features
 
 - 📄 Upload CV and Project Report (PDF)
-- 🤖 AI-powered evaluation using OpenAI GPT
+- 🤖 AI-powered evaluation using Grok 4
 - 🔍 RAG (Retrieval-Augmented Generation) with ChromaDB
 - ⚡ Async processing with Celery + Redis
 - 📊 Structured scoring based on predefined rubrics
@@ -18,7 +18,7 @@ AI-powered CV and Project Evaluation System using FastAPI, PostgreSQL, and LLM.
 - **Database**: PostgreSQL + SQLAlchemy
 - **Package Manager**: UV
 - **Task Queue**: Celery + Redis
-- **LLM**: OpenAI GPT-4
+- **LLM**: Grok 4
 - **Vector DB**: ChromaDB
 - **PDF Parsing**: PyPDF2
 
@@ -48,8 +48,8 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ### 2. Clone and Install Dependencies
 
 ```bash
-git clone <your-repo>
-cd cv-evaluator-backend
+git clone https://github.com/nizarfadlan/cv-ai-backend
+cd cv-ai-backend
 uv sync
 ```
 
@@ -60,32 +60,20 @@ cp .env.example .env
 # Edit .env with your configurations
 ```
 
-### 4. Setup PostgreSQL
+### 4. Setup PostgreSQL and Redis
+Using Docker Compose:
 
 ```bash
-# Using Docker
-docker run --name cv-eval-postgres \
-  -e POSTGRES_USER=user \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=cv_evaluator \
-  -p 5432:5432 -d postgres:15
+docker-compose -f docker-compose.dev.yaml up -d
 ```
 
-### 5. Setup Redis
-
-```bash
-# Using Docker
-docker run --name cv-eval-redis \
-  -p 6379:6379 -d redis:7
-```
-
-### 6. Run Migrations (Optional: using Alembic)
+### 5. Run Migrations
 
 ```bash
 uv run alembic upgrade head
 ```
 
-### 7. Ingest Reference Documents
+### 6. Ingest Reference Documents
 
 ```bash
 uv run python scripts/ingest_reference_docs.py
@@ -96,7 +84,7 @@ uv run python scripts/ingest_reference_docs.py
 ### Start FastAPI Server
 
 ```bash
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 6500
 ```
 
 ### Start Celery Worker
@@ -119,8 +107,8 @@ Form data:
 
 Response:
 {
-  "cv_document": {"id": 1, "filename": "...", ...},
-  "project_document": {"id": 2, "filename": "...", ...}
+  "cv_document": {"id": "uuid", "filename": "...", ...},
+  "project_document": {"id": "uuid", "filename": "...", ...}
 }
 ```
 
@@ -132,31 +120,30 @@ Content-Type: application/json
 
 {
   "job_title": "Backend Developer",
-  "cv_document_id": 1,
-  "project_document_id": 2
+  "cv_document_id": "uuid",
+  "project_document_id": "uuid"
 }
 
 Response:
 {
-  "id": 123,
+  "id": "uuid123",
   "status": "queued"
 }
 ```
 
 ### 3. Get Evaluation Result
-
 ```bash
 GET /result/{id}
 
 Response (queued/processing):
 {
-  "id": 123,
+  "id": "uuid123",
   "status": "processing"
 }
 
 Response (completed):
 {
-  "id": 123,
+  "id": "uuid123",
   "status": "completed",
   "result": {
     "cv_match_rate": 0.82,
