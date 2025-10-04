@@ -23,6 +23,9 @@ async def get_evaluation_result(
         status=evaluation.status,
     )
 
+    if evaluation.status == EvaluationStatus.FAILED.value:
+        response.error_message = evaluation.error_message
+
     if evaluation.status == EvaluationStatus.COMPLETED.value:
         response.result = EvaluationResult(
             cv_match_rate=evaluation.cv_match_rate,

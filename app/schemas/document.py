@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from uuid import UUID
+from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import datetime
 from app.models.document import DocumentType
 
@@ -22,6 +23,13 @@ class DocumentResponse(DocumentBase):
     original_filename: str
     file_size: int
     uploaded_at: datetime
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        if isinstance(v, UUID):
+            return str(v)
+        return v
 
 
 class UploadResponse(BaseModel):
