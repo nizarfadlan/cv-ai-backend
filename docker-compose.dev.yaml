@@ -7,6 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: cv_ai_db
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+      POSTGRES_MULTIPLE_DATABASES: cv_ai_db,cv_ai_test_db
     ports:
       - "6501:5432"
     volumes:
