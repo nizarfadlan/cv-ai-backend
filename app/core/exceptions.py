@@ -9,7 +9,7 @@ class FileUploadException(HTTPException):
 class FileSizeException(HTTPException):
     def __init__(self, max_size: int):
         super().__init__(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"File size exceeds maximum allowed size of {max_size} bytes",
         )
 
