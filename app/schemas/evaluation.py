@@ -1,6 +1,5 @@
 from uuid import UUID
 from pydantic import (
-    UUID7,
     BaseModel,
     ConfigDict,
     Field,
@@ -12,8 +11,8 @@ from app.models.evaluation import EvaluationStatus
 
 class EvaluationCreate(BaseModel):
     job_title: str = Field(..., min_length=1, max_length=255)
-    cv_document_id: UUID7
-    project_document_id: UUID7
+    cv_document_id: UUID
+    project_document_id: UUID
 
 
 class EvaluationResult(BaseModel):
