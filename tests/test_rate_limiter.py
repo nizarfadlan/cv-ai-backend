@@ -110,16 +110,17 @@ class TestInMemoryRateLimiter:
         remaining = await limiter.get_remaining(key, limit)
         assert remaining == limit - 3
 
-    def test_cleanup_expired(self):
+    async def test_cleanup_expired(self):
         limiter = InMemoryRateLimiter()
 
         # Add some entries
-        limiter._requests["key1"].append(1000.0)  # Old timestamp
-        limiter._requests["key2"].append(9999999999.0)  # Future timestamp
-        limiter._requests["key3"].append(1000.0)  # Old timestamp
+        async with limiter._lock:
+            limiter._requests["key1"].append(1000.0)  # Old timestamp
+            limiter._requests["key2"].append(9999999999.0)  # Future timestamp
+            limiter._requests["key3"].append(1000.0)  # Old timestamp
 
         # Cleanup with window of 60 seconds
-        limiter.cleanup_expired(window=60)
+        await limiter.cleanup_expired(window=60)
 
         # Old entries should be removed
         assert "key1" not in limiter._requests

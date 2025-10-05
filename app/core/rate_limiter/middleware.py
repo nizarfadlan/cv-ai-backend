@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,7 +11,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        backend: RateLimiterBackend,
+        backend: Union[RateLimiterBackend, Callable[[], Optional[RateLimiterBackend]]],
         limit: int = 100,
         window: int = 60,
         key_func: Optional[Callable[[Request], str]] = None,
@@ -54,6 +54,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Skip rate limiting for excluded paths
         if self._should_exclude(request.url.path):
+            return await call_next(request)
+
+        if callable(self.backend):
+            self.backend = self.backend()
+
+        if not self.backend:
+            print("Rate limiter backend not set, skipping rate limiting")
             return await call_next(request)
 
         # Get rate limit key
