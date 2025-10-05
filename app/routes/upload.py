@@ -45,6 +45,7 @@ async def upload_documents(
             cv_document=DocumentResponse.model_validate(cv_document),
             project_document=DocumentResponse.model_validate(report_document),
         )
-
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
