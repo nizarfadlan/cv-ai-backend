@@ -190,7 +190,7 @@ Project Text + Case Study (RAG) → LLM → Project Scores & Feedback
 ## Testing
 
 ```bash
-uv run pytest tests/ -v --cov=app
+uv run pytest tests/ -v
 ```
 
 ## Development
