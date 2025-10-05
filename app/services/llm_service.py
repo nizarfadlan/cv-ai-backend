@@ -250,4 +250,4 @@ Provide 3-5 sentences covering:
 
 Keep it professional and concise."""
 
-        return await self.generate_completion(prompt, temperature=0.2, max_tokens=500)
+        return await self.generate_completion(prompt, temperature=0.3, max_tokens=500)
