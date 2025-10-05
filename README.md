@@ -197,11 +197,8 @@ uv run pytest tests/ -v --cov=app
 
 ```bash
 # Format code
-uv run black app/
+uv run ruff format app/
 
-# Lint
-uv run flake8 app/
-
-# Type check
-uv run mypy app/
+# Check linting issues
+uv run ruff check app/
 ```
